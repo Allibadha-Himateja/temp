@@ -1,0 +1,43 @@
+<div class="content-wrapper bg-parcel">
+    <div class="content-section">
+        <div id="parcel-selection">
+            <div class="management-header">
+                <h3>Ongoing Parcel Orders</h3>
+                <button class="btn" id="new-parcel-order-btn">
+                    <i class="fas fa-plus"></i> New Parcel Order
+                </button>
+            </div>
+            <div id="ongoing-parcels-list" class="item-grid" style="padding-top: 20px;">
+                </div>
+        </div>
+
+        <div id="parcel-order-view" style="display: none;">
+            <div class="order-page-header">
+                <h2 id="parcel-order-title"></h2>
+                <div class="action-buttons">
+                    <button class="btn btn-back" id="back-to-parcels-btn"><i class="fas fa-arrow-left"></i> Back to All Parcels</button>
+                    <button class="btn" id="send-to-kitchen-btn-parcel">Send to Kitchen</button>
+                    <button class="btn" id="checkout-btn-parcel">Finalize for Bill</button>
+                    <button class="btn" id="generate-bill-btn-parcel">Generate Bill</button>
+                </div>
+            </div>
+            
+            <div class="order-interface">
+                <div class="menu-selection-panel">
+                    <div class="menu-header">
+                        <div class="search-bar">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="menu-search-input" class="input-field" placeholder="Search menu items...">
+                        </div>
+                        <div id="category-filters" class="category-filters">
+                            </div>
+                    </div>
+                    <div id="menu-grid-container" class="menu-grid">
+                        </div>
+                </div>
+                <div id="current-order-summary" class="order-summary">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,33 @@
+<div class="content-wrapper bg-settings">
+    <div class="content-section">
+        <h2>Settings</h2>
+        <div class="form-container">
+            <div class="settings-row">
+                <label for="theme">Theme</label>
+                <select id="theme" class="input-field">
+                    <option value="light">Light Mode</option>
+                    <option value="dark">Dark Mode</option>
+                </select>
+            </div>
+            <div class="settings-row">
+                <label for="default-page">Default Start Page</label>
+                <select id="default-page" class="input-field">
+                    <option value="home">Dashboard</option>
+                    <option value="tables">Tables</option>
+                    <option value="parcel">Parcel</option>
+                </select>
+            </div>
+            <button class="btn" id="save-settings-btn" style="margin-top: 20px;">Save Settings</button>
+
+            <hr style="margin: 30px 0;">
+
+            <div class="settings-row destructive-action">
+                <div>
+                    <h4>Reset Application</h4>
+                    <p>This will permanently delete all tables, orders, and bills.</p>
+                </div>
+                <button class="btn btn-danger" id="clear-data-btn">Clear All Data</button>
+            </div>
+        </div>
+    </div>
+</div>

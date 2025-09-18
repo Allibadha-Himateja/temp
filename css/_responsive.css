@@ -1,0 +1,29 @@
+/* --- Print Styles --- */
+@media print {
+    body { color: #000; background-color: #fff; }
+    body.printing-bill .app-container, body.printing-bill .app-sidebar, body:not(.printing-bill) #bill-modal { display: none; }
+    body.printing-bill .modal-overlay { background-color: transparent; position: static; display: block; opacity: 1; visibility: visible; }
+    body.printing-bill .modal-content { box-shadow: none; border: none; width: 100%; max-width: 100%; border-radius: 0; background: #fff; }
+    body.printing-bill .modal-header, body.printing-bill .modal-footer { display: none; }
+    body.printing-bill .receipt { color: #000; text-align: center; }
+    body:not(.printing-bill) #bills-content, body:not(.printing-bill) #bills-content * { visibility: visible; }
+    body:not(.printing-bill) #bills-content { position: absolute; left: 0; top: 0; width: 100%; }
+}
+
+/* --- Responsive Styles --- */
+@media (max-width: 992px) {
+    .order-interface { grid-template-columns: 1fr; }
+    .order-summary { margin-top: 30px; }
+}
+@media (max-width: 768px) {
+    .app-header h1 { font-size: 1.2em; }
+    .app-sidebar { width: 220px; }
+    body.sidebar-open .app-container { left: 220px; }
+    .kot-ticket { width: 100%; }
+    .modal-content { width: 90%; }
+}
+@media (max-width: 480px) {
+    .app-header h1 { font-size: 1em; }
+    .app-sidebar { width: 200px; }
+    body.sidebar-open .app-container { left: 200px; }
+}

@@ -1,0 +1,37 @@
+/* --- Light Mode Color Palette (Professional Blue/Green Theme) --- */
+:root {
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --bg-header: #0d47a1;
+    --bg-sidebar: linear-gradient(to bottom, #42a5f5, #1e88e5);
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-on-dark: #ffffff;
+    --border-color: #dee2e6;
+    --shadow-color-light: rgba(0, 0, 0, 0.05);
+    --shadow-color-heavy: rgba(0, 0, 0, 0.1);
+    --overlay-bg: rgba(255, 255, 255, 0.85);
+
+    /* Main Accent Colors */
+    --accent-blue: #007bff;      /* Primary actions */
+    --accent-orange: #fd7e14;     /* Occupied status */
+    --accent-yellow: #ffc107;     /* KOT action */
+    --accent-cyan: #17a2b8;       /* Secondary info */
+    --accent-green: #28a745;      /* Success & Available status */
+    --accent-red: #dc3545;        /* Danger & Delete */
+}
+
+/* --- Dark Mode Color Palette (Professional Blue/Green Theme) --- */
+body.dark-mode {
+    --bg-primary: #121212;
+    --bg-secondary: #1e1e1e;
+    --bg-header: #1e293b;
+    --bg-sidebar: linear-gradient(to bottom, #334155, #1e293b);
+    --text-primary: #e9ecef;
+    --text-secondary: #adb5bd;
+    --text-on-dark: #ffffff;
+    --border-color: #495057;
+    --shadow-color-light: rgba(0, 0, 0, 0.15);
+    --shadow-color-heavy: rgba(0, 0, 0, 0.2);
+    --overlay-bg: rgba(0, 0, 0, 0.7);
+}

@@ -1,0 +1,41 @@
+/* --- Main Layout --- */
+.app-container { display: flex; flex-direction: column; height: 100vh; position: relative; left: 0; transition: left 0.3s ease-in-out; }
+.app-header { background-color: var(--bg-header); color: var(--text-on-dark); display: flex; align-items: center; padding: 0 25px; height: 65px;box-shadow: 0 2px 4px var(--shadow-color-light); z-index: 100; }
+.app-header h1 { margin: 0 0 0 15px; font-size: 1.5em; font-weight: 500; }
+.app-sidebar { position: fixed; top: 0; left: 0; width: 260px; height: 100%; background: var(--bg-sidebar); color: var(--text-on-dark); padding: 20px; box-shadow: 2px 0 5px var(--shadow-color-heavy); transform: translateX(-100%); transition: transform 0.3s ease-in-out; z-index: 200; display: flex; flex-direction: column; box-sizing: border-box; }
+body.sidebar-open .app-sidebar { transform: translateX(0); }
+body.sidebar-open .app-container { left: 260px; }
+.sidebar-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.3); }
+.sidebar-header h2 { margin: 0; font-weight: 500; }
+.app-sidebar ul { list-style: none; padding: 0; margin: 20px 0 0 0; }
+.app-sidebar ul.sidebar-bottom { margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2); }
+.app-sidebar a { color: var(--text-on-dark); text-decoration: none; font-size: 1.05em; display: flex; align-items: center; gap: 15px; padding: 12px 15px; border-radius: 8px; transition: background-color 0.2s ease-in-out; }
+.app-sidebar a:hover { background-color: rgba(255, 255, 255, 0.15); }
+.app-sidebar a.active { background-color: rgba(0, 0, 0, 0.25); font-weight: 600; }
+.sidebar-toggle-btn, .sidebar-close-btn { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; padding: 5px; }
+.app-content { flex-grow: 1; padding: 0; overflow-y: auto; position: relative; }
+.app-footer { background-color: var(--bg-secondary); color: var(--text-secondary); text-align: center; padding: 15px; font-size: 0.9em; border-top: 1px solid var(--border-color); }
+
+/* --- Live Clock Style --- */
+.header-clock {
+    margin-left: auto; /* Pushes the clock to the far right */
+    font-size: 1.2em;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 1px;
+}
+
+/* --- Page Backgrounds --- */
+.content-wrapper { padding: 30px; min-height: 100%; box-sizing: border-box; position: relative; background-size: cover; background-position: center; }
+.content-wrapper::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--overlay-bg); z-index: 1; transition: background-color 0.3s; }
+.content-wrapper > * { position: relative; z-index: 2; }
+.content-section { width: 100%; }
+.bg-home { background-image: url('https://images.pexels.com/photos/262047/pexels-photo-262047.jpeg'); }
+.bg-tables { background-image: url('https://images.pexels.com/photos/67468/pexels-photo-67468.jpeg'); }
+.bg-parcel { background-image: url('https://images.pexels.com/photos/3756523/pexels-photo-3756523.jpeg'); }
+.bg-update { background-image: url('https://images.pexels.com/photos/4348401/pexels-photo-4348401.jpeg'); }
+.bg-bills { background-image: url('https://images.pexels.com/photos/590020/pexels-photo-590020.jpeg'); }
+.bg-kitchen { background-image: url('https://images.pexels.com/photos/3220617/pexels-photo-3220617.jpeg'); }
+.bg-profile { background-image: url('https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg'); }
+.bg-settings { background-image: url('https://images.pexels.com/photos/3184418/pexels-photo-3184418.jpeg'); }

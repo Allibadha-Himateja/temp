@@ -1,0 +1,25 @@
+/* --- MAIN STYLESHEET --- */
+/* This file imports all other style partials in the correct order of specificity. */
+
+/* 1. Variables and color themes */
+@import url('css/_variables.css');
+
+/* 2. Global resets and base styles */
+@import url('css/_reset.css');
+
+/* 3. Core application layout (header, sidebar, etc.) */
+@import url('css/_layout.css');
+
+/* 4. Reusable components (buttons, cards, forms, modals) */
+@import url('css/_components.css');
+
+/* 5. Page-specific styles */
+@import url('css/_page-dashboard.css');
+@import url('css/_page-tables.css');
+@import url('css/_page-order.css');
+@import url('css/_page-update.css');
+@import url('css/_page-kitchen.css');
+@import url('css/_page-bills.css');
+
+/* 6. Responsive media queries (loaded last) */
+@import url('css/_responsive.css');

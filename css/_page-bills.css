@@ -1,0 +1,19 @@
+/* --- Page: Bills --- */
+.bill-actions .btn-print { background-color: var(--accent-blue); } .bill-actions .btn-print:hover { background-color: #0069d9; }
+.bill-actions .btn-download { background-color: var(--accent-green); } .btn-download:hover { background-color: #218838; }
+#bills-content { background-color: var(--bg-secondary); border-radius: 8px; box-shadow: 0 4px 15px var(--shadow-color-light); border: 1px solid var(--border-color); overflow: hidden; }
+.bills-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.bills-table th, .bills-table td { text-align: left; padding: 16px; vertical-align: middle; }
+.bills-table thead th { background-color: var(--bg-primary); color: var(--text-primary); font-weight: 600; border-bottom: 2px solid var(--border-color); }
+.bills-table tbody tr { border-bottom: 1px solid var(--border-color); }
+.bills-table tbody tr:nth-of-type(even) { background-color: var(--bg-primary); }
+.bills-table tbody tr:last-of-type { border-bottom: none; }
+.bills-table td ul { margin: 0; padding-left: 20px; list-style-type: disc; }
+.receipt { padding: 25px; font-family: 'Courier New', Courier, monospace; color: var(--text-primary); }
+.receipt-table { width: 100%; text-align: left; border-collapse: collapse; margin: 15px 0;}
+.receipt-table th, .receipt-table td { padding: 5px 0;}
+.receipt-table thead th { border-bottom: 1px solid var(--text-primary); }
+.receipt-table .qty, .receipt-table .rate, .receipt-table .amount { text-align: right; }
+.receipt-summary { margin-top: 15px; padding-top: 10px; border-top: 1px dashed var(--text-secondary); }
+.summary-item { display: flex; justify-content: space-between; padding: 2px 0; }
+.summary-total { border-top: 1px solid var(--text-primary); font-weight: bold; font-size: 1.1em; margin-top: 5px; padding-top: 5px; display: flex; justify-content: space-between; }

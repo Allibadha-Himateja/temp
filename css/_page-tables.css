@@ -1,0 +1,25 @@
+/* --- Page: Tables & Parcels List --- */
+.tables-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding-top: 20px;}
+#ongoing-parcels-list.item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+.table-card, .parcel-card { border-left: 5px solid; cursor: pointer; }
+.table-card.status-available { border-color: var(--accent-green); }
+.table-card.status-booked { border-color: var(--accent-orange); }
+.table-card.status-billed { border-color: var(--accent-blue); }
+.table-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+.table-card-header h4 { margin: 0; font-size: 1.5em; }
+.status-badge { padding: 4px 10px; border-radius: 15px; font-size: 0.8em; font-weight: 600; color: #fff; }
+.status-available .status-badge { background-color: var(--accent-green); }
+.status-booked .status-badge { background-color: var(--accent-orange); }
+.status-billed .status-badge { background-color: var(--accent-blue); }
+.table-card-body { text-align: center; }
+.table-card-body .table-icon { font-size: 3em; color: var(--text-secondary); margin: 10px 0; }
+.table-card-body .availability { font-style: italic; color: var(--text-secondary); font-size: 1.1em; margin: 20px 0 10px; }
+.table-details { display: flex; justify-content: space-around; align-items: center; margin-top: 25px; font-size: 1.1em; font-weight: 500; }
+.table-details span { display: flex; align-items: center; gap: 8px; }
+.parcel-card.status-ordering { border-color: #6c757d; }
+.parcel-card.status-cooking { border-color: var(--accent-yellow); }
+.parcel-card.status-ready { border-color: var(--accent-green); }
+.parcel-card.status-billed { border-color: var(--accent-blue); }
+.parcel-icon { font-size: 3em; color: var(--text-secondary); margin: 10px 0; }
+.status-ordering .status-badge { background-color: #6c757d; } .status-cooking .status-badge { background-color: var(--accent-yellow); color: #212529; }
+.status-ready .status-badge { background-color: var(--accent-green); }

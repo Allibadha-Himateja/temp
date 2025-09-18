@@ -1,0 +1,36 @@
+<div class="content-wrapper bg-tables">
+    
+    <div id="table-selection-view">
+        <h2 id="tables-page-title">Manage Tables</h2>
+        <div id="tables-container" class="tables-container"></div>
+    </div>
+
+    <div id="order-taking-view" style="display: none;">
+        <div class="order-page-header">
+            <h2 id="order-title"></h2>
+            <div id="table-actions-container" class="action-buttons">
+                <button class="btn btn-back" id="back-to-tables-btn"><i class="fas fa-arrow-left"></i> Back</button>
+                <button class="btn" id="send-to-kitchen-btn">Send to Kitchen</button>
+                <button class="btn" id="checkout-btn">Finalize for Bill</button>
+                <button class="btn" id="generate-bill-btn">Generate Bill</button>
+            </div>
+        </div>
+        
+        <div id="menu-section" class="order-interface">
+            <div class="menu-selection-panel">
+                <div class="menu-header">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="menu-search-input" placeholder="Search menu items...">
+                    </div>
+                    <div id="category-filters" class="category-filters">
+                        </div>
+                </div>
+                <div id="menu-grid-container" class="menu-grid">
+                    </div>
+            </div>
+            <div id="current-order-summary" class="order-summary">
+                </div>
+        </div>
+    </div>
+</div>

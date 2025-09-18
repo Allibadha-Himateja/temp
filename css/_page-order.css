@@ -1,0 +1,257 @@
+/* --- Page: Order Taking --- */
+
+.order-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+.order-page-header h2 {
+    margin: 0;
+}
+
+.order-interface {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(340px, 1fr);
+    gap: 25px;
+}
+
+#send-to-kitchen-btn, #send-to-kitchen-btn-parcel { background-color: var(--accent-yellow); color: #212529; }
+#send-to-kitchen-btn:hover, #send-to-kitchen-btn-parcel:hover { background-color: #e0a800; }
+#checkout-btn, #checkout-btn-parcel { background-color: var(--accent-cyan); }
+#checkout-btn:hover, #checkout-btn-parcel:hover { background-color: #138496; }
+#generate-bill-btn, #generate-bill-btn-parcel { background-color: var(--accent-green); }
+#generate-bill-btn:hover, #generate-bill-btn-parcel:hover { background-color: #218838; }
+
+.menu-selection-panel {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 4px 12px var(--shadow-color-light);
+    border: 1px solid var(--border-color);
+    padding: 25px; /* Increased padding */
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-header {
+    margin-bottom: 20px;
+}
+
+/* Polished styling for the Search Bar */
+.search-bar {
+    position: relative; /* Establishes a positioning context for the icon */
+    margin-bottom: 25px;
+}
+
+.search-bar .input-field {
+    height: 48px;
+    box-sizing: border-box; /* Ensures padding is included in the height */
+    /* KEY FIX: This padding pushes the text to the right to make space for the icon */
+    padding-left: 45px; 
+    font-weight: 500;
+    border-radius: 8px; 
+}
+
+/* Styles the placeholder text */
+.search-bar .input-field::placeholder {
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+/* Styles the magnifying glass icon */
+.search-bar i {
+    position: absolute;
+    /* Positions the icon perfectly inside the left padding area */
+    top: 50%;
+    left: 18px; 
+    transform: translateY(-50%);
+    color: var(--text-secondary);
+    font-size: 1.1em;
+    pointer-events: none; /* Allows clicks to go through to the input */
+}
+.category-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filter-btn {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.filter-btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-primary);
+    transform: translateY(-2px);
+}
+.filter-btn.active {
+    background-color: var(--accent-blue);
+    color: white;
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+}
+
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    overflow-y: auto;
+    flex-grow: 1;
+    max-height: 60vh;
+    padding: 10px;
+}
+.menu-grid .item-card {
+    text-align: center;
+    box-shadow: none;
+    cursor: pointer;
+}
+.menu-grid .item-card:hover {
+    border-color: var(--accent-blue);
+}
+
+.order-summary {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 8px var(--shadow-color-light);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: 80vh;
+}
+.summary-header {
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--border-color);
+    flex-shrink: 0;
+}
+.summary-header h3 {
+    margin: 0;
+    text-align: left;
+}
+.order-items-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 10px 0;
+}
+.order-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 5px;
+    border-bottom: 1px solid var(--border-color);
+}
+.order-item-row .item-info .item-name {
+    display: block;
+    font-weight: 600;
+}
+.order-item-row .item-info .item-price {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+.order-item-row .item-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.order-item-row .quantity-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.order-item-row .item-qty {
+    font-weight: 500;
+    min-width: 20px;
+    text-align: center;
+}
+.btn-qty-minus, .btn-qty-plus {
+    background-color: var(--accent-blue);
+    width: 24px;
+    height: 24px;
+    font-size: 1em;
+    margin: 0;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.btn-qty-minus:hover, .btn-qty-plus:hover {
+    background-color: #0056b3;
+}
+.order-item-row .btn-delete-item {
+    background-color: transparent;
+    border: none;
+    color: var(--accent-red);
+}
+.order-item-row .btn-delete-item:hover {
+    background-color: var(--accent-red);
+    color: white;
+}
+.order-totals {
+    flex-shrink: 0;
+    padding-top: 15px;
+    margin-top: auto;
+    border-top: 2px solid var(--border-color);
+}
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.1em;
+    padding: 5px 0;
+    color: var(--text-secondary);
+}
+.total-row.grand-total {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-top: 5px;
+}
+.order-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-secondary);
+    height: 100%;
+    padding: 20px;
+}
+.order-empty i {
+    font-size: 4em;
+    margin-bottom: 20px;
+    opacity: 0.5;
+}
+
+/* Styles for Unavailable Items on Order Page */
+.menu-item-card.unavailable {
+    opacity: 0.5;
+    cursor: not-allowed;
+    position: relative;
+}
+.menu-item-card.unavailable:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--border-color);
+}
+.unavailable-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-15deg);
+    background-color: rgba(0,0,0,0.6);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 1.1em;
+    z-index: 2;
+}

@@ -1,0 +1,54 @@
+<div class="content-wrapper bg-home">
+    <div class="content-section">
+        <h2>Dashboard</h2>
+        <div class="dashboard-grid">
+            <div class="stat-card icon-tables">
+                <div class="stat-card-icon"><i class="fas fa-th-large"></i></div>
+                <div class="stat-card-info">
+                    <span class="stat-title">Active Tables</span>
+                    <span class="stat-value" id="active-tables-count">0</span>
+                </div>
+            </div>
+            <div class="stat-card icon-parcels">
+                <div class="stat-card-icon"><i class="fas fa-box-open"></i></div>
+                <div class="stat-card-info">
+                    <span class="stat-title">Pending Parcels</span>
+                    <span class="stat-value" id="pending-parcels-count">0</span>
+                </div>
+            </div>
+            <div class="stat-card icon-kitchen">
+                <div class="stat-card-icon"><i class="fas fa-utensils"></i></div>
+                <div class="stat-card-info">
+                    <span class="stat-title">Pending KOTs</span>
+                    <span class="stat-value" id="pending-kots-count">0</span>
+                </div>
+            </div>
+            <div class="stat-card icon-sales">
+                <div class="stat-card-icon"><i class="fas fa-rupee-sign"></i></div>
+                <div class="stat-card-info">
+                    <span class="stat-title">Today's Sales</span>
+                    <span class="stat-value" id="total-sales-amount">₹0.00</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="home-grid">
+            <div class="home-section">
+                <h3>Weekly Revenue</h3>
+                <div class="chart-container">
+                    <canvas id="revenue-chart"></canvas>
+                </div>
+            </div>
+            <div class="home-section">
+                <h3>Top Selling Items (Today)</h3>
+                <div id="top-items-list-container">
+                    </div>
+            </div>
+        </div>
+
+        <div class="home-section">
+            <h3>Recent Bills</h3>
+            <div id="recent-bills-list"><p>No bills generated yet.</p></div>
+        </div>
+    </div>
+</div>

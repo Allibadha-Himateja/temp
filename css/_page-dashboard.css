@@ -1,0 +1,140 @@
+/* --- Page: Dashboard --- */
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+}
+
+/* Layout for the main dashboard sections below the stats */
+.home-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-top: 40px;
+}
+
+/* Base style for each panel on the home page */
+.home-section {
+    background: var(--bg-secondary);
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px var(--shadow-color-light);
+    border: 1px solid var(--border-color);
+}
+/* A separate rule to add space ONLY between top-level sections */
+.content-section > .home-section {
+    margin-top: 40px;
+}
+
+.home-section h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.4em;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Polished styling for the individual statistic cards */
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    border-left: 5px solid; /* Color is set by modifier class below */
+    box-shadow: 0 4px 15px var(--shadow-color-light);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px var(--shadow-color-heavy);
+}
+
+.stat-card-icon {
+    font-size: 1.8rem;
+    padding: 18px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+}
+
+.stat-card-info { 
+    display: flex; 
+    flex-direction: column; 
+}
+
+.stat-card .stat-title {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.stat-card .stat-value {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Color variations for each stat card */
+.stat-card.icon-tables { border-color: var(--accent-orange); }
+.stat-card .icon-tables { background-color: var(--accent-orange); }
+
+.stat-card.icon-parcels { border-color: var(--accent-cyan); }
+.stat-card .icon-parcels { background-color: var(--accent-cyan); }
+
+.stat-card.icon-kitchen { border-color: var(--accent-red); }
+.stat-card .icon-kitchen { background-color: var(--accent-red); }
+
+.stat-card.icon-sales { border-color: var(--accent-green); }
+.stat-card .icon-sales { background-color: var(--accent-green); }
+
+/* Container for the revenue chart */
+.chart-container {
+    position: relative;
+    height: 350px;
+    width: 100%;
+}
+
+.no-data-msg {
+    text-align: center;
+    color: var(--text-secondary);
+    padding: 20px;
+}
+
+/* Styles for Top Selling Items list */
+.top-items-list {
+    list-style: none;
+    padding-left: 0;
+    margin: 0;
+}
+.top-items-list li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    font-size: 1.05em;
+    border-bottom: 1px solid var(--border-color);
+}
+.top-items-list li:last-child {
+    border-bottom: none;
+}
+.top-items-list .item-name {
+    font-weight: 600;
+}
+.top-items-list .item-count {
+    font-weight: 500;
+    color: var(--text-secondary);
+    background-color: var(--bg-primary);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.9em;
+}

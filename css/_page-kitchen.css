@@ -1,0 +1,9 @@
+/* --- Page: Kitchen (KOT) --- */
+.kot-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+.kot-ticket { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-top: 5px solid var(--accent-blue); border-radius: 8px; box-shadow: 0 4px 8px var(--shadow-color-light); padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; }
+.kot-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border-color); padding-bottom: 10px; margin-bottom: 10px; }
+.kot-header .timestamp { color: var(--text-secondary); }
+.kot-items-list { list-style: none; padding: 0; margin: 0; flex-grow: 1; }
+.kot-items-list li { padding: 8px 0; font-size: 1.1rem; }
+.kot-actions { margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--border-color); }
+.kot-actions .btn { display: flex; justify-content: center; align-items: center; width: 100%; background-color: var(--accent-blue); color: white; border: none; }
