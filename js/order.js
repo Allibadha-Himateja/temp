@@ -1,198 +1,273 @@
-// js/order.js
-import * as state from './state.js';
-import { showBillModal } from './ui.js';
-import { handleRouteChange } from './router.js';
+import { showNotification } from './ui.js';
+import { getMenu, refreshState } from './state.js';
+import { apiService } from './apiService.js';
 
-let currentSource = null;
 
-const updateActionButtonsState = (container) => {
-    if (!currentSource || !container) return;
-    const sendBtn = container.querySelector('[id^="send-to-kitchen-btn"]');
-    const checkoutBtn = container.querySelector('[id^="checkout-btn"]');
-    const generateBillBtn = container.querySelector('[id^="generate-bill-btn"]');
-    
-    if (sendBtn) sendBtn.disabled = currentSource.order.length === 0;
-    if (checkoutBtn) checkoutBtn.disabled = currentSource.orderStatus !== 'ready' || currentSource.pendingBillItems.length === 0;
-    if (generateBillBtn) generateBillBtn.disabled = currentSource.orderStatus !== 'billed';
+let currentOrder = {
+    tableId: null,
+    orderType: null, // This will be set to 'DineIn' or 'Parcel'
+    items: [], // An array of aggregated item objects: { ItemID, ItemName, RegularPrice, quantity }
 };
 
-const renderOrderSummary = (summaryContainer, actionButtonsContainer) => {
-    if (!summaryContainer || !currentSource) return;
+// --- DOM Element Cache ---
+// Caching these elements prevents repeated and slow lookups in the DOM.
+let menuGridContainer, summaryContainer, actionButtonsContainer, categoryFilters, searchInput, orderTitle;
 
-    if (currentSource.order.length === 0) {
-        summaryContainer.innerHTML = `
-            <div class="summary-header"><h3>Current Order</h3></div>
-            <div class="order-empty"><i class="fas fa-receipt"></i><p>Click menu items to add them.</p></div>`;
-        updateActionButtonsState(actionButtonsContainer);
-        return;
-    }
+// --- Helper Functions ---
 
-    const aggregatedOrder = currentSource.order.reduce((acc, item) => {
-        if (!acc[item.id]) acc[item.id] = { ...item, qty: 0 };
-        acc[item.id].qty += 1;
-        return acc;
-    }, {});
-    
-    let subtotal = 0;
-    let orderItemsHtml = '';
-    Object.values(aggregatedOrder).forEach(item => {
-        const itemTotal = item.price * item.qty;
-        subtotal += itemTotal;
-        orderItemsHtml += `
-            <div class="order-item-row" data-item-id="${item.id}">
-                <div class="item-info"><span class="item-name">${item.name}</span><span class="item-price">₹${item.price.toFixed(2)}</span></div>
-                <div class="item-actions">
-                    <div class="quantity-controls">
-                        <button class="btn-qty-minus" data-item-id="${item.id}">-</button>
-                        <span class="item-qty">${item.qty}</span>
-                        <button class="btn-qty-plus" data-item-id="${item.id}">+</button>
-                    </div>
-                    <button class="btn-icon btn-delete-item" data-item-id="${item.id}"><i class="fas fa-trash-alt"></i></button>
-                </div>
-            </div>`;
-    });
 
-    const gst = subtotal * 0.05;
-    const grandTotal = subtotal + gst;
-
-    summaryContainer.innerHTML = `
-        <div class="summary-header"><h3>Current Order</h3></div>
-        <div class="order-items-list">${orderItemsHtml}</div>
-        <div class="order-totals">
-            <div class="total-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
-            <div class="total-row"><span>GST (5%)</span><span>₹${gst.toFixed(2)}</span></div>
-            <div class="total-row grand-total"><span>Grand Total</span><span>₹${grandTotal.toFixed(2)}</span></div>
-        </div>`;
-    
-    updateActionButtonsState(actionButtonsContainer);
+const calculateTotals = (items) => {
+    const subtotal = items.reduce((sum, item) => sum + item.RegularPrice * item.quantity, 0);
+    const taxRate = 0.05; // Standard 5% GST
+    const tax = subtotal * taxRate;
+    const grandTotal = subtotal + tax;
+    return { subtotal, tax, grandTotal };
 };
 
-// THIS FUNCTION CONTAINS THE LOGIC FIX
-const renderMenuGrid = (filter = '', category = 'All') => {
-    const menuContainer = document.getElementById('menu-grid-container');
-    if (!menuContainer) return;
+// --- Render Functions ---
 
-    const menu = state.getMenu();
-    menuContainer.innerHTML = '';
-    
-    // LOGIC FIX: Added 'item.isAvailable' to the filter condition.
-    // Now, it only selects items that are available AND match the category/search.
-    const filteredMenu = menu.filter(item => 
-        item.isAvailable && 
-        (category === 'All' || item.category === category) && 
-        item.name.toLowerCase().includes(filter.toLowerCase())
+const renderMenuGrid = () => {
+    if (!menuGridContainer) return;
+
+    const filter = searchInput.value;
+    const activeCategory = categoryFilters.querySelector('.filter-btn.active');
+    const categoryId = activeCategory ? activeCategory.dataset.categoryId : 'All';
+
+    const menu = getMenu();
+    const filteredMenu = menu.filter(item =>
+        item.IsAvailable &&
+        (categoryId === 'All' || item.CategoryID == categoryId) &&
+        item.ItemName.toLowerCase().includes(filter.toLowerCase())
     );
 
     if (filteredMenu.length === 0) {
-        menuContainer.innerHTML = `<p style="padding: 20px; text-align: center;">No menu items found.</p>`;
+        menuGridContainer.innerHTML = `<p class="no-data-msg" style="grid-column: 1 / -1;">No menu items found.</p>`;
+    } else {
+        menuGridContainer.innerHTML = filteredMenu.map(item => `
+            <div class="item-card menu-item-card" data-item-id="${item.ItemID}">
+                <div class="card-content">
+                    <h4 class="item-name">${item.ItemName}</h4>
+                    <p class="item-price">₹${item.RegularPrice.toFixed(2)}</p>
+                </div>
+            </div>`).join('');
+    }
+};
+
+
+const renderOrderSummary = () => {
+    if (!summaryContainer) return;
+
+    if (currentOrder.items.length === 0) {
+        summaryContainer.innerHTML = `
+            <div class="summary-header"><h3>Current Order</h3></div>
+            <div class="order-empty"><i class="fas fa-receipt"></i><p>Click menu items to add them.</p></div>`;
+    } else {
+        const { subtotal, tax, grandTotal } = calculateTotals(currentOrder.items);
+        const orderItemsHtml = currentOrder.items.map(item => `
+            <div class="order-item-row" data-item-id="${item.ItemID}">
+                <div class="item-info">
+                    <span class="item-name">${item.ItemName}</span>
+                    <span class="item-price">₹${item.RegularPrice.toFixed(2)}</span>
+                </div>
+                <div class="item-actions">
+                    <div class="quantity-controls">
+                        <button class="btn-qty-minus" data-item-id="${item.ItemID}">-</button>
+                        <span class="item-qty">${item.quantity}</span>
+                        <button class="btn-qty-plus" data-item-id="${item.ItemID}">+</button>
+                    </div>
+                    <button class="btn-icon btn-delete-item" data-item-id="${item.ItemID}">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>`).join('');
+
+        summaryContainer.innerHTML = `
+            <div class="summary-header"><h3>Current Order</h3></div>
+            <div class="order-items-list">${orderItemsHtml}</div>
+            <div class="order-totals">
+                <div class="total-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+                <div class="total-row"><span>Tax (5%)</span><span>₹${tax.toFixed(2)}</span></div>
+                <div class="total-row grand-total"><span>Grand Total</span><span>₹${grandTotal.toFixed(2)}</span></div>
+            </div>`;
+    }
+    updateActionButtonsState();
+};
+
+
+const updateActionButtonsState = () => {
+    if (!actionButtonsContainer) return;
+    const sendBtn = actionButtonsContainer.querySelector('[id^="send-to-kitchen-btn"]');
+    if (sendBtn) {
+        sendBtn.disabled = currentOrder.items.length === 0;
+    }
+};
+
+// --- API Call Handlers ---
+
+const handleSendToKitchen = async () => {
+    if (currentOrder.items.length === 0) return;
+    console.log("Current Order being sent to kitchen:", currentOrder);
+    const orderData = {
+        tableId: currentOrder.tableId,
+        orderType: currentOrder.orderType, // CRITICAL: This is now correctly set to 'DineIn' or 'Parcel'
+        items: currentOrder.items.map(item => ({
+            itemId: item.ItemID,
+            quantity: item.quantity,
+        }))
+    };
+
+    try {
+        console.log("Order Data to be sent:", orderData);
+        const response = await apiService.createOrder(orderData);
+        if (response.success || response.queued) {
+            // After successfully creating the order, programmatically click the "back" button
+            // to return the user to the previous screen (table list or parcel list).
+            const backButton = document.querySelector('#back-to-tables-btn, #back-to-parcels-btn');
+            backButton?.click();
+        }
+    } catch (error) {
+        // The apiService already shows an error notification, so no extra UI is needed here.
+        console.error("Failed to send order:", error);
+    }
+};
+
+// --- Cart Management Functions ---
+
+const handleAddItem = (itemId) => {
+    const existingItem = currentOrder.items.find(i => i.ItemID === itemId);
+    if (existingItem) {
+        existingItem.quantity++;
+    } else {
+        const menuItem = getMenu().find(i => i.ItemID === itemId);
+        if (menuItem) {
+            currentOrder.items.push({ ...menuItem, quantity: 1 });
+        }
+    }
+    renderOrderSummary();
+};
+
+const handleRemoveItem = (itemId) => {
+    const existingItem = currentOrder.items.find(i => i.ItemID === itemId);
+    if (existingItem && existingItem.quantity > 1) {
+        existingItem.quantity--;
+    } else {
+        // If quantity is 1 or less, remove the item completely.
+        currentOrder.items = currentOrder.items.filter(i => i.ItemID !== itemId);
+    }
+    renderOrderSummary();
+};
+
+const handleDeleteItem = (itemId) => {
+    currentOrder.items = currentOrder.items.filter(i => i.ItemID !== itemId);
+    renderOrderSummary();
+};
+
+
+// --- Event Delegation ---
+
+/**
+ * A single event handler for all clicks within the order interface.
+ * This is more efficient than attaching many individual listeners.
+ * @param {Event} e - The click event.
+ */
+function handleOrderViewClick(e) {
+    const target = e.target;
+    
+    // Category filter buttons
+    const filterBtn = target.closest('.filter-btn');
+    if (filterBtn) {
+        categoryFilters.querySelector('.filter-btn.active')?.classList.remove('active');
+        filterBtn.classList.add('active');
+        renderMenuGrid();
         return;
     }
     
-    // The rendering logic no longer needs to worry about unavailable items
-    menuContainer.innerHTML = filteredMenu.map(item => `
-        <div class="item-card menu-item-card" data-item-id="${item.id}">
-            <div class="card-content">
-                <h4 class="item-name">${item.name}</h4>
-                <p class="item-price">₹${item.price.toFixed(2)}</p>
-            </div>
-        </div>`).join('');
-};
+    // Add item from menu grid
+    const menuItemCard = target.closest('.menu-item-card');
+    if (menuItemCard) {
+        handleAddItem(parseInt(menuItemCard.dataset.itemId));
+        return;
+    }
 
+    // --- Order Summary Buttons ---
+    const plusBtn = target.closest('.btn-qty-plus');
+    if (plusBtn) {
+        handleAddItem(parseInt(plusBtn.dataset.itemId));
+        return;
+    }
+    const minusBtn = target.closest('.btn-qty-minus');
+    if (minusBtn) {
+        handleRemoveItem(parseInt(minusBtn.dataset.itemId));
+        return;
+    }
+    const deleteBtn = target.closest('.btn-delete-item');
+    if (deleteBtn) {
+        handleDeleteItem(parseInt(deleteBtn.dataset.itemId));
+        return;
+    }
 
-export const initOrderInterface = (source, orderViewContainer) => {
-    currentSource = source; 
-    const menuSelectionPanel = orderViewContainer.querySelector('.menu-selection-panel');
-    const menuGridContainer = menuSelectionPanel.querySelector('.menu-grid');
-    const summaryContainer = orderViewContainer.querySelector('.order-summary');
-    const actionButtonsContainer = orderViewContainer.querySelector('.action-buttons');
+    // --- Main Action Buttons ---
+    if (target.closest('[id^="send-to-kitchen-btn"]')) {
+        handleSendToKitchen();
+    }
+}
+
+// --- Initialization ---
+
+/**
+ * Initializes the entire order-taking interface. This is the main public function for this module.
+ * @param {object} config - Configuration object, e.g., { type: 'Table', source: tableObject } or { type: 'Parcel' }.
+ * @param {HTMLElement} orderViewContainer - The main container element for the order view.
+ */
+export const initOrderInterface = (table, orderViewContainer,config) => {
+    // 1. Reset and configure the current order based on type
     
-    const categories = ['All', ...new Set(state.getMenu().map(item => item.category))];
-    const filtersContainer = menuSelectionPanel.querySelector('.category-filters');
-    filtersContainer.innerHTML = categories.map(cat => `<button class="filter-btn ${cat === 'All' ? 'active' : ''}" data-category="${cat}">${cat}</button>`).join('');
+    if (config.type === 'Table') {
+        currentOrder = {
+            tableId: table.TableID,
+            orderType: 'DineIn',
+            items: [],
+        };
+    } else { // It's a Parcel order
+        currentOrder = {
+            tableId: null,
+            orderType: 'Parcel',
+            items: [],
+        };
+    }
 
+    // 2. Cache DOM elements for quick access
+    menuGridContainer = orderViewContainer.querySelector('#menu-grid-container');
+    summaryContainer = orderViewContainer.querySelector('#current-order-summary');
+    actionButtonsContainer = orderViewContainer.querySelector('.action-buttons');
+    categoryFilters = orderViewContainer.querySelector('#category-filters');
+    searchInput = orderViewContainer.querySelector('#menu-search-input');
+    orderTitle = orderViewContainer.querySelector('#order-title, #parcel-order-title');
+
+    // 3. Set up the UI elements
+    orderTitle.textContent = config.type === 'Table' ? `New Order for Table ${config.source.TableNumber}` : 'New Parcel Order';
+    searchInput.value = '';
+
+    const categories = getMenu().reduce((acc, item) => {
+        if (!acc.find(c => c.CategoryID === item.CategoryID)) {
+            acc.push({ CategoryID: item.CategoryID, CategoryName: item.CategoryName });
+        }
+        return acc;
+    }, []);
+    
+    categoryFilters.innerHTML = `<button class="filter-btn active" data-category-id="All">All</button>` +
+        categories.map(cat => `<button class="filter-btn" data-category-id="${cat.CategoryID}">${cat.CategoryName}</button>`).join('');
+
+    // 4. Initial Render
     renderMenuGrid();
-    renderOrderSummary(summaryContainer, actionButtonsContainer);
+    renderOrderSummary();
 
-    const searchInput = menuSelectionPanel.querySelector('#menu-search-input');
-    searchInput.addEventListener('input', () => {
-        const activeFilter = filtersContainer.querySelector('.filter-btn.active');
-        renderMenuGrid(searchInput.value, activeFilter.dataset.category);
-    });
-
-    filtersContainer.addEventListener('click', e => {
-        if (e.target.classList.contains('filter-btn')) {
-            filtersContainer.querySelector('.filter-btn.active').classList.remove('active');
-            e.target.classList.add('active');
-            renderMenuGrid(searchInput.value, e.target.dataset.category);
-        }
-    });
-
-    menuGridContainer.addEventListener('click', e => {
-        const card = e.target.closest('.menu-item-card');
-        if (card) {
-            const menuItem = state.getMenuItemById(parseInt(card.dataset.itemId));
-            currentSource.order.push(menuItem);
-            if (currentSource.name) currentSource.status = 'booked';
-            renderOrderSummary(summaryContainer, actionButtonsContainer);
-        }
-    });
-
-    summaryContainer.addEventListener('click', e => {
-        const button = e.target.closest('button');
-        if (!button) return;
-        const itemId = parseInt(button.dataset.itemId);
-        if (button.classList.contains('btn-qty-plus')) {
-            currentSource.order.push(state.getMenuItemById(itemId));
-        } else if (button.classList.contains('btn-qty-minus')) {
-            const index = currentSource.order.findIndex(item => item.id === itemId);
-            if (index > -1) currentSource.order.splice(index, 1);
-        } else if (button.classList.contains('btn-delete-item')) {
-            currentSource.order = currentSource.order.filter(item => item.id !== itemId);
-        }
-        if (currentSource.order.length === 0 && currentSource.pendingBillItems.length === 0 && currentSource.name) {
-            currentSource.status = 'available';
-        }
-        renderOrderSummary(summaryContainer, actionButtonsContainer);
-    });
-    
-    const getSourceId = () => currentSource.name ? `Table ${currentSource.name}` : `Parcel ${currentSource.token}`;
-    
-    actionButtonsContainer.querySelector('[id^="send-to-kitchen-btn"]').onclick = () => {
-        if (currentSource.order.length > 0) {
-            currentSource.pendingBillItems.push(...currentSource.order);
-            state.addKitchenOrder({ id: Date.now(), table: getSourceId(), items: [...currentSource.order], timestamp: new Date().toLocaleTimeString(), status: 'pending' });
-            currentSource.order = [];
-            currentSource.orderStatus = 'cooking';
-            alert(`Order for ${getSourceId()} sent to kitchen!`);
-            renderOrderSummary(summaryContainer, actionButtonsContainer);
-        }
-    };
-    
-    actionButtonsContainer.querySelector('[id^="checkout-btn"]').onclick = () => {
-        if (currentSource.pendingBillItems.length > 0) {
-            showBillModal(currentSource.pendingBillItems, `Finalize for ${getSourceId()}`, true, () => {
-                currentSource.orderStatus = 'billed';
-                alert('Items confirmed. You can now generate the final bill.');
-                updateActionButtonsState(actionButtonsContainer);
-            });
-        }
-    };
-
-    actionButtonsContainer.querySelector('[id^="generate-bill-btn"]').onclick = () => {
-        if (currentSource.orderStatus === 'billed') {
-            const total = currentSource.pendingBillItems.reduce((sum, item) => sum + item.price, 0) * 1.05;
-            const newBill = { orderId: `ORD-${Date.now().toString().slice(-6)}`, dateTime: new Date().toLocaleString(), table: getSourceId(), items: [...currentSource.pendingBillItems], total: total };
-            state.addBill(newBill);
-            showBillModal(newBill.items, `Final Bill for ${getSourceId()}`, false, null, () => {
-                if (currentSource.name) {
-                    currentSource.order = []; currentSource.pendingBillItems = [];
-                    currentSource.status = 'available'; currentSource.orderStatus = 'ordering';
-                    state.updateTable(currentSource);
-                } else {
-                    state.removeParcelByToken(currentSource.token);
-                }
-                handleRouteChange();
-            });
-        }
-    };
+    // 5. Attach Event Listeners
+    // First, remove any old listeners to prevent memory leaks and duplicate events.
+    orderViewContainer.removeEventListener('click', handleOrderViewClick);
+    searchInput.removeEventListener('input', renderMenuGrid);
+    // Then, attach the new listeners.
+    orderViewContainer.addEventListener('click', handleOrderViewClick);
+    searchInput.addEventListener('input', renderMenuGrid);
 };
+

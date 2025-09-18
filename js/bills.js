@@ -1,16 +1,21 @@
-// js/bills.js
-import * as state from './state.js';
+import { getBills } from './state.js';
 
 const exportToCsv = (bills) => {
-    if (bills.length === 0) return alert("No data to export.");
-    const headers = ["Date/Time", "OrderID", "Source", "Details", "Total"];
+    if (bills.length === 0) {
+        alert("No data to export.");
+        return;
+    }
+
+    const headers = ["Bill Number", "Order Number", "Date", "Payment Method", "Status", "Total Amount"];
     const rows = bills.map(bill => [
-        `"${bill.dateTime}"`,
-        `"${bill.orderId}"`,
-        `"${bill.table}"`,
-        `"${bill.items.map(i => `${i.name} (x${i.qty || 1})`).join("; ")}"`,
-        bill.total
+        `"${bill.BillNumber}"`,
+        `"${bill.OrderNumber}"`,
+        `"${new Date(bill.CreatedAt).toLocaleString()}"`,
+        `"${bill.PaymentMethod || 'N/A'}"`,
+        `"${bill.PaymentStatus}"`,
+        bill.TotalAmount
     ]);
+
     const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -25,21 +30,47 @@ const exportToCsv = (bills) => {
 
 export const initBillsPage = () => {
     const content = document.getElementById("bills-content");
-    const bills = state.getBills();
-    let html = '<table class="bills-table"><thead><tr><th>Date/Time</th><th>Order ID</th><th>Source</th><th>Items</th><th>Total</th></tr></thead><tbody>';
+    const bills = getBills();
+
+    let tableHtml = `
+        <table class="bills-table">
+            <thead>
+                <tr>
+                    <th>Bill Number</th>
+                    <th>Order Number</th>
+                    <th>Date/Time</th>
+                    <th>Table</th>
+                    <th>Payment</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>`;
     
-    if (bills.length === 0) {
-        html += '<tr><td colspan="5" style="text-align:center; padding: 20px;">No bills available.</td></tr>';
+    if (!bills || bills.length === 0) {
+        tableHtml += '<tr><td colspan="7" class="no-data-msg">No bills available.</td></tr>';
     } else {
-        [...bills].reverse().forEach(bill => {
-            const itemsHtml = bill.items.map(item => `<li>${item.name}</li>`).join("");
-            html += `<tr><td>${bill.dateTime}</td><td>${bill.orderId}</td><td>${bill.table}</td><td><ul>${itemsHtml}</ul></td><td>₹${bill.total.toFixed(2)}</td></tr>`;
+        // Sort bills by date, newest first
+        const sortedBills = [...bills].sort((a, b) => new Date(b.CreatedAt) - new Date(a.CreatedAt));
+        
+        sortedBills.forEach(bill => {
+            tableHtml += `
+                <tr>
+                    <td>${bill.BillNumber}</td>
+                    <td>${bill.OrderNumber}</td>
+                    <td>${new Date(bill.CreatedAt).toLocaleString()}</td>
+                    <td>${bill.TableNumber || 'Parcel'}</td>
+                    <td>${bill.PaymentMethod || 'N/A'}</td>
+                    <td><span class="status-badge status-${bill.PaymentStatus.toLowerCase()}">${bill.PaymentStatus}</span></td>
+                    <td>₹${bill.TotalAmount.toFixed(2)}</td>
+                </tr>`;
         });
     }
     
-    html += "</tbody></table>";
-    content.innerHTML = html;
+    tableHtml += "</tbody></table>";
+    content.innerHTML = tableHtml;
 
+    // Add event listeners after rendering
     document.getElementById("download-excel-btn")?.addEventListener("click", () => exportToCsv(bills));
     document.getElementById("print-bills-btn")?.addEventListener("click", () => window.print());
 };

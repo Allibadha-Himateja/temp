@@ -10,11 +10,11 @@ const calculateCardTotal = (table) => {
 };
 
 const renderTablesView = () => {
-    state.syncState(); // Ensure we have the latest data
     const selectionView = document.getElementById("table-selection-view");
     const orderView = document.getElementById("order-taking-view");
     
     if (selectedTableName) {
+        // console.log("here we are getting the table Order:",selectedTableName,state.getTables(selectedTableName));
         const table = state.getTableByName(selectedTableName);
         if (!table) { // If table was deleted from another tab
             selectedTableName = null;
@@ -23,8 +23,9 @@ const renderTablesView = () => {
         }
         selectionView.style.display = "none";
         orderView.style.display = "block";
-        document.getElementById("order-title").textContent = `Order for Table ${table.name}`;
-        initOrderInterface(table, orderView);
+        document.getElementById("order-title").textContent = `Order for Table ${table.TableNumber}`;
+        console.log("table in tables.js:",table);
+        initOrderInterface(table, orderView,{ type: 'Table', source: table });
 
     } else {
         selectionView.style.display = "block";
@@ -33,6 +34,7 @@ const renderTablesView = () => {
         const tablesContainer = document.getElementById("tables-container");
         tablesContainer.innerHTML = '';
         state.getTables().forEach(table => {
+            // console.log(table);
             const card = document.createElement("div");
             let statusClass = table.status === 'booked' ? 'status-booked' : 'status-available';
             if (table.orderStatus === 'billed') statusClass = 'status-billed';
@@ -53,11 +55,11 @@ const renderTablesView = () => {
             }
 
             card.innerHTML = `
-                <div class="table-card-header"><h4>${table.name}</h4><span class="status-badge">${statusText}</span></div>
+                <div class="table-card-header"><h4>${table.TableNumber}</h4><span class="status-badge">${statusText}</span></div>
                 <div class="table-card-body"><i class="fas fa-chair table-icon"></i>${detailsHtml}</div>`;
             
             card.addEventListener("click", () => {
-                selectedTableName = table.name;
+                selectedTableName = table.TableNumber;
                 renderTablesView();
             });
             tablesContainer.appendChild(card);

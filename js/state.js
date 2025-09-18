@@ -1,114 +1,102 @@
 // js/state.js
-import { getLocalDateString } from './utils.js';
+import { apiService } from './apiService.js';
+import { showNotification } from '../js/ui.js';
 
-const initialState = {
-    tables: [
-        { name: 'T1', status: 'available', order: [], orderStatus: 'ordering', pendingBillItems: [] },
-        { name: 'T2', status: 'available', order: [], orderStatus: 'ordering', pendingBillItems: [] },
-        { name: 'T3', status: 'available', order: [], orderStatus: 'ordering', pendingBillItems: [] },
-    ],
-    parcelOrders: [],
-    menu: [
-        // ADDED isAvailable property to each item
-        { id: 1, name: 'Spring Rolls', category: 'Appetizers', price: 250, isAvailable: true },
-        { id: 2, name: 'Garlic Bread', category: 'Appetizers', price: 180, isAvailable: true },
-        { id: 3, name: 'Chicken Wings', category: 'Appetizers', price: 320, isAvailable: true },
-        { id: 4, name: 'Pasta Carbonara', category: 'Main Course', price: 450, isAvailable: true },
-        { id: 5, name: 'Grilled Chicken', category: 'Main Course', price: 550, isAvailable: true },
-        { id: 6, name: 'Veg Biryani', category: 'Main Course', price: 350, isAvailable: true },
-        { id: 7, name: 'Fish Curry', category: 'Main Course', price: 480, isAvailable: true },
-        { id: 8, name: 'Cheesecake', category: 'Desserts', price: 300, isAvailable: true },
-        { id: 9, name: 'Chocolate Brownie', category: 'Desserts', price: 220, isAvailable: true },
-        { id: 10, name: 'Iced Tea', category: 'Beverages', price: 120, isAvailable: true },
-        { id: 11, name: 'Coffee', category: 'Beverages', price: 150, isAvailable: true },
-    ],
+// --- Central Application State ---
+// The state is now initialized as null. It will be populated by fetching from the API.
+const appState = {
+    tables: [],
+    menu: [],
+    kitchenOrders:[],
     bills: [],
-    kitchenOrders: []
 };
 
-let appState = JSON.parse(localStorage.getItem('restaurantState')) || initialState;
+/**
+ * Fetches initial data from the server to populate the appState.
+ * This should be called once when the application starts.
+ * It shows a loading indicator while fetching.
+ */
+export const initializeAppState = async () => {
+    // You can implement a more sophisticated loading indicator in your UI
+    document.body.classList.add('loading'); // A simple loading indicator
 
-const saveState = () => {
-    localStorage.setItem('restaurantState', JSON.stringify(appState));
-};
+    try {
+        const [menuRes, tablesRes, kitchenOrdersRes, billsRes] = await Promise.all([
+            apiService.getMenu(),
+            apiService.getTables(),
+            apiService.getKitchenOrders(),
+            apiService.getBills(),
+        ]);
 
-export const getState = () => appState;
-export const syncState = () => {
-    appState = JSON.parse(localStorage.getItem('restaurantState')) || initialState;
-};
-// ... (getTables, addTable, etc. remain the same)
-export const getTables = () => appState.tables;
-export const getTableByName = (name) => appState.tables.find(t => t.name === name);
-export const addTable = (name) => {
-    if (name && !appState.tables.some(t => t.name === name)) {
-        appState.tables.push({ name, status: "available", order: [], orderStatus: "ordering", pendingBillItems: [] });
-        saveState();
-        return true;
-    }
-    return false;
-};
-export const removeTable = (index) => {
-    appState.tables.splice(index, 1);
-    saveState();
-};
-export const updateTable = (updatedTable) => {
-    const index = appState.tables.findIndex(t => t.name === updatedTable.name);
-    if (index !== -1) { appState.tables[index] = updatedTable; saveState(); }
-};
-export const getParcels = () => appState.parcelOrders;
-export const getParcelByToken = (token) => appState.parcelOrders.find(p => p.token === token);
-export const createParcel = () => {
-    const token = `P${Math.floor(100 + 900 * Math.random())}`;
-    appState.parcelOrders.push({ token, order: [], orderStatus: "ordering", pendingBillItems: [] });
-    saveState();
-    return token;
-};
-export const removeParcelByToken = (token) => {
-    appState.parcelOrders = appState.parcelOrders.filter(p => p.token !== token);
-    saveState();
-};
-export const updateParcel = (updatedParcel) => {
-    const index = appState.parcelOrders.findIndex(p => p.token === updatedParcel.token);
-    if (index !== -1) { appState.parcelOrders[index] = updatedParcel; saveState(); }
-};
-
-export const getMenu = () => appState.menu;
-export const getMenuItemById = (id) => appState.menu.find(item => item.id === id);
-export const addMenuItem = (item) => {
-    appState.menu.push({ id: Date.now(), ...item, isAvailable: true }); // New items are available by default
-    saveState();
-};
-export const updateMenuItem = (updatedItem) => {
-    const index = appState.menu.findIndex(item => item.id === updatedItem.id);
-    if(index !== -1) { Object.assign(appState.menu[index], updatedItem); saveState(); }
-};
-export const removeMenuItem = (id) => {
-    appState.menu = appState.menu.filter(item => item.id !== id);
-    saveState();
-};
-
-// NEW FUNCTION to toggle item availability
-export const toggleMenuItemAvailability = (id) => {
-    const item = appState.menu.find(item => item.id === id);
-    if (item) {
-        item.isAvailable = !item.isAvailable;
-        saveState();
+        appState.menu = menuRes.data || [];
+        appState.tables = tablesRes.data || [];
+        appState.kitchenOrders = kitchenOrdersRes.data || [];
+        appState.bills = billsRes.data || [];
+        console.log('✅ Application state initialized from API.');
+    } catch (error) {
+        console.error('❌ Failed to initialize application state:', error);
+        showNotification('Fatal Error', 'Could not load initial data. Please check your connection and refresh the page.', 'error');
+        // In a real app, you might want to show a full-page error message
+    } finally {
+        document.body.classList.remove('loading');
     }
 };
 
-// ... (getKitchenOrders, addBill, etc. remain the same)
-export const getKitchenOrders = () => appState.kitchenOrders;
-export const addKitchenOrder = (order) => {
-    appState.kitchenOrders.push(order);
-    saveState();
+/**
+ * Gets a specific part of the application state.
+ * @param {string} key - The key of the state to retrieve (e.g., 'tables').
+ * @returns {any} The requested state data.
+ */
+export const getState = (key) => {
+    if (appState[key] === null) {
+        console.warn(`State for "${key}" has not been initialized yet.`);
+    }
+    return appState[key];
 };
-export const removeKitchenOrder = (id) => {
-    appState.kitchenOrders = appState.kitchenOrders.filter(o => o.id !== id);
-    saveState();
-};
-export const getBills = () => appState.bills;
-export const addBill = (bill) => {
-    const billWithDate = { ...bill, date: getLocalDateString() };
-    appState.bills.push(billWithDate);
-    saveState();
+
+// --- Data Access Functions ---
+// These functions now simply return the data from the already populated appState.
+
+export const getTables = () => getState('tables');
+export const getMenu = () => getState('menu');
+export const getKitchenOrders = () => getState('kitchenOrders');
+export const getBills = () => getState('bills');
+
+export const getTableByName = (name) => getTables()?.find(t => t.TableNumber === name);
+export const getMenuItemById = (id) => getMenu()?.find(item => item.id === id);
+
+
+/**
+ * Refreshes a specific part of the state from the API.
+ * @param {string} key - The key of the state to refresh.
+ */
+export const refreshState = async (key) => {
+    try {
+        let response;
+        switch (key) {
+            case 'tables':
+                response = await apiService.getTables();
+                break;
+            case 'menu':
+                response = await apiService.getMenu();
+                break;
+            case 'kitchenOrders':
+                response = await apiService.getKitchenOrders();
+                break;
+            case 'bills':
+                response = await apiService.getBills();
+                break;
+            default:
+                console.warn(`Unknown state key to refresh: ${key}`);
+                return;
+        }
+        if (response.success) {
+            appState[key] = response.data;
+            console.log(`✅ ${key} state has been refreshed.`);
+        } else {
+            throw new Error(response.error);
+        }
+    } catch (error) {
+        showNotification('Refresh Error', `Could not refresh ${key}.`, 'error');
+    }
 };

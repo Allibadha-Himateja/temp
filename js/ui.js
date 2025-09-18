@@ -102,3 +102,42 @@ export const initBillModal = () => {
         body.classList.remove('printing-bill');
     });
 };
+
+// --- Formatting Utilities ---
+export const formatCurrency = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
+export const formatDateTime = (dateString) => new Date(dateString).toLocaleString('en-IN');
+export const formatTime = (dateString) => new Date(dateString).toLocaleTimeString('en-IN', { hour12: true, hour: '2-digit', minute: '2-digit' });
+
+// --- Notification System ---
+export const showNotification = (title, message, type = 'info') => {
+    const container = document.getElementById('notification-container') || createNotificationContainer();
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-header">
+            <strong>${title}</strong>
+            <button class="close-btn">&times;</button>
+        </div>
+        <p>${message}</p>
+        <div class="notification-timer"></div>
+    `;
+    
+    container.appendChild(notification);
+    
+    const close = () => {
+        notification.classList.add('fade-out');
+        setTimeout(() => notification.remove(), 500);
+    };
+
+    notification.querySelector('.close-btn').onclick = close;
+    setTimeout(close, 5000); // Auto-dismiss after 5 seconds
+};
+
+function createNotificationContainer() {
+    const container = document.createElement('div');
+    container.id = 'notification-container';
+    document.body.appendChild(container);
+    return container;
+}
+
+

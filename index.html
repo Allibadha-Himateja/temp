@@ -4,27 +4,41 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Restaurant Counter</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <link rel="stylesheet" href="style.css">
+    <!-- External Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" xintegrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Application Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Main Application Container -->
     <div class="app-container" id="app-container">
+        <!-- Header -->
         <header class="app-header">
             <button class="sidebar-toggle-btn" id="sidebar-toggle-btn">
                 <i class="fas fa-bars"></i>
             </button>
-            <h1 style="padding-bottom: 5px; line-height: 55px;">The Restaurant Counter</h1>
+            <h1>The Restaurant Counter</h1>
             <div class="header-clock" id="header-clock"></div>
         </header>
 
-        <main class="app-content" id="main-content"></main>
+        <!-- Main Content Area (Pages will be loaded here) -->
+        <main class="app-content" id="main-content">
+            <!-- Initial Loading Message -->
+            <div class="content-wrapper">
+                <h2>Loading...</h2>
+            </div>
+        </main>
         
+        <!-- Footer -->
         <footer class="app-footer">
             <p>&copy; 2025 The Restaurant Counter</p>
         </footer>
     </div>
 
+    <!-- Sidebar Navigation -->
     <nav class="app-sidebar" id="app-sidebar">
         <div class="sidebar-header">
             <h2>Menu</h2>
@@ -33,7 +47,7 @@
             </button>
         </div>
         <ul>
-            <li><a href="#home" class="nav-link" data-page="home"><i class="fas fa-home"></i> <span>Home</span></a></li>
+            <li><a href="#home" class="nav-link active" data-page="home"><i class="fas fa-home"></i> <span>Home</span></a></li>
             <li><a href="#tables" class="nav-link" data-page="tables"><i class="fas fa-th-large"></i> <span>Tables</span></a></li>
             <li><a href="#parcel" class="nav-link" data-page="parcel"><i class="fas fa-box-open"></i> <span>Parcel</span></a></li>
             <li><a href="#kitchen" class="nav-link" data-page="kitchen"><i class="fas fa-utensils"></i> <span>Kitchen View</span></a></li>
@@ -46,6 +60,7 @@
         </ul>
     </nav>
     
+    <!-- Shared Bill Modal -->
     <div id="bill-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -61,6 +76,7 @@
         </div>
     </div>
 
+    <!-- Main Application Script -->
     <script type="module" src="js/main.js"></script>
 </body>
 </html>

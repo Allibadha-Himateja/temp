@@ -2,7 +2,6 @@
 import * as state from './state.js';
 
 const renderKitchenOrders = () => {
-    state.syncState(); // Ensure we have the latest data
     const kotContainer = document.getElementById('kot-display-area');
     if (!kotContainer) return;
 
