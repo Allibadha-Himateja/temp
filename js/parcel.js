@@ -1,92 +1,125 @@
-// js/parcel.js
-import * as state from './state.js';
 import { initOrderInterface } from './order.js';
+import { apiService } from './apiService.js';
+import { showNotification } from './ui.js';
 
-let selectedParcelToken = null;
+let orderInterfaceCleanup = null;
 
-const calculateCardTotal = (parcel) => {
-    const allItems = [...parcel.order, ...parcel.pendingBillItems];
-    return allItems.reduce((sum, item) => sum + item.price, 0);
-};
-
-const renderParcelView = () => {
-    state.syncState(); // Ensure we have the latest data
+/**
+ * Toggles between the list of parcels and the order creation view.
+ * @param {'list' | 'order'} view - The view to display.
+ * @param {object|null} parcelData - Data for an existing parcel to load into the order view.
+ */
+const showView = (view, parcelData = null) => {
     const selectionView = document.getElementById("parcel-selection");
     const orderView = document.getElementById("parcel-order-view");
 
-    if (selectedParcelToken) {
-        const parcel = state.getParcelByToken(selectedParcelToken);
-        if (!parcel) { // If parcel was deleted from another tab
-            selectedParcelToken = null;
-            renderParcelView();
-            return;
-        }
+    if (view === 'order') {
         selectionView.style.display = "none";
         orderView.style.display = "block";
-        document.getElementById("parcel-order-title").textContent = `Order for Parcel ${parcel.token}`;
-        initOrderInterface(parcel, orderView);
-
+        const orderConfig = parcelData ? 
+            { type: 'Parcel', source: parcelData } : 
+            { type: 'Parcel' };
+        orderInterfaceCleanup = initOrderInterface(orderConfig, orderView);
     } else {
+        if(orderInterfaceCleanup) orderInterfaceCleanup();
         selectionView.style.display = "block";
         orderView.style.display = "none";
-        
-        const listContainer = document.getElementById("ongoing-parcels-list");
-        listContainer.innerHTML = '';
-        const ongoingParcels = state.getParcels();
-        
-        if (ongoingParcels.length > 0) {
-            ongoingParcels.forEach(parcel => {
-                const card = document.createElement("div");
-                let statusClass = `status-${parcel.orderStatus}`;
-                card.className = `item-card parcel-card ${statusClass}`;
-
-                let statusText = parcel.orderStatus.charAt(0).toUpperCase() + parcel.orderStatus.slice(1);
-                let detailsHtml = '<p class="availability">Ready for order</p>';
-
-                if (parcel.pendingBillItems.length > 0 || parcel.order.length > 0) {
-                     const total = calculateCardTotal(parcel);
-                     const itemCount = parcel.order.length + parcel.pendingBillItems.length;
-                     detailsHtml = `<div class="table-details"><span><i class="fas fa-list-ol"></i> ${itemCount} Items</span><span><i class="fas fa-rupee-sign"></i> ${total.toFixed(2)}</span></div>`;
-                }
-
-                card.innerHTML = `
-                    <div class="table-card-header"><h4>Parcel ${parcel.token}</h4><span class="status-badge">${statusText}</span></div>
-                    <div class="table-card-body"><i class="fas fa-box-open parcel-icon"></i>${detailsHtml}</div>`;
-
-                card.addEventListener("click", () => {
-                    selectedParcelToken = parcel.token;
-                    renderParcelView();
-                });
-                listContainer.appendChild(card);
-            });
-        } else {
-            listContainer.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; padding: 20px;">No ongoing parcel orders.</p>';
-        }
     }
 };
 
-export const initParcelPage = () => {
-    selectedParcelToken = null;
+/**
+ * Renders the list of ongoing parcel orders.
+ */
+const renderParcelList = async () => {
+    const listContainer = document.getElementById("ongoing-parcels-list");
+    if (!listContainer) return;
+    listContainer.innerHTML = '<p class="loading-msg">Loading ongoing parcels...</p>';
 
-    // REAL-TIME UPDATE LOGIC
-    const storageListener = () => {
-        renderParcelView();
-    };
-    window.addEventListener('storage', storageListener);
+    try {
+        const response = await apiService.getOrders(null, 'Parcel');
+        
+        // --- BUG FIX: Safely handle the API response ---
+        // Check if response.data is an array before trying to use it.
+        const parcelsWithItems = Array.isArray(response.data) ? response.data : [];
+        const ongoingParcels = parcelsWithItems.filter(p => p.Status !== 'Completed' && p.Status !== 'Cancelled');
 
-    document.getElementById("new-parcel-order-btn")?.addEventListener("click", () => {
-        selectedParcelToken = state.createParcel();
-        renderParcelView();
+        if (ongoingParcels.length === 0) {
+            listContainer.innerHTML = '<p class="no-data-msg">No ongoing parcel orders.</p>';
+            return;
+        }
+
+        listContainer.innerHTML = ongoingParcels.map(order => {
+            const itemsHtml = order.items.map(item =>
+                `<li>${item.ItemName} <strong>x${item.Quantity}</strong></li>`
+            ).join('');
+
+            return `
+                <div class="item-card parcel-card status-${order.Status.toLowerCase()}" data-order-id="${order.OrderID}">
+                    <div class="table-card-header">
+                        <h4>Parcel #${order.OrderNumber}</h4>
+                        <span class="status-badge">${order.Status}</span>
+                    </div>
+                    <div class="parcel-card-body">
+                        <ul class="item-list">${itemsHtml}</ul>
+                    </div>
+                    <div class="parcel-card-footer">
+                        <span>Total:</span>
+                        <span class="total-amount">₹${(order.FinalAmount || 0).toFixed(2)}</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (error) {
+        listContainer.innerHTML = '<p class="error-msg">Failed to load parcels. Please try again.</p>';
+        console.error("Error rendering parcel list:", error);
+    }
+};
+
+
+const setupEventListeners = () => {
+    const newParcelBtn = document.getElementById("new-parcel-order-btn");
+    const backBtn = document.getElementById("back-to-parcels-btn");
+    const listContainer = document.getElementById("ongoing-parcels-list");
+
+    newParcelBtn?.addEventListener("click", () => {
+        showView('order');
     });
-    document.getElementById("back-to-parcels-btn")?.addEventListener("click", () => {
-        selectedParcelToken = null;
-        renderParcelView();
+
+    backBtn?.addEventListener("click", () => {
+        showView('list');
+        renderParcelList(); // Refresh the list
     });
     
-    renderParcelView();
+    listContainer?.addEventListener('click', async (e) => {
+        const card = e.target.closest('.parcel-card');
+        if (card) {
+            const orderId = card.dataset.orderId;
+            showNotification('Loading...', `Fetching details for order #${orderId}.`);
+            try {
+                const response = await apiService.getOrderById(orderId);
+                if(response.data){
+                     showView('order', response.data);
+                } else {
+                    throw new Error('Order data not found in response.');
+                }
+            } catch (error) {
+                showNotification('Error', 'Failed to load parcel details.', 'error');
+            }
+        }
+    });
+};
 
-    // Return a cleanup function
+/**
+ * Initializes the parcel page.
+ */
+export const initParcelPage = () => {
+    renderParcelList();
+    setupEventListeners();
+    
     return () => {
-        window.removeEventListener('storage', storageListener);
+        if(orderInterfaceCleanup) orderInterfaceCleanup();
+        console.log('Parcel page cleaned up.');
     };
 };
+

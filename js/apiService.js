@@ -57,9 +57,22 @@ export const apiService = {
     // -- Order Endpoints --
     createOrder: (orderData) => apiRequest('/orders', 'POST', orderData),
     updateOrder: (id, orderData) => apiRequest(`/orders/${id}`, 'PUT', orderData),
+    // getOrders: () => apiRequest('/orders', 'GET'),
+    getOrderById: (id) => apiRequest(`/orders/${id}`, 'GET'),
+    getOrders: (status = null, orderType = null) => {
+        const params = new URLSearchParams();
+        if (status) {
+            params.append('status', status);
+        }
+        if (orderType) {
+            params.append('orderType', orderType);
+        }
+        const endpoint = `/orders${params.toString() ? '?' + params.toString() : ''}`;
+        return apiRequest(endpoint);
+    },
 
     // -- Kitchen Endpoints --
-    getKitchenOrders: () => apiRequest('/kitchen/queue'),
+    getKitchenOrders: () => apiRequest('/kitchen/queue', 'GET'),
     updateKitchenOrderStatus: (id, status) => apiRequest(`/kitchen/queue/${id}`, 'PATCH', { status }),
 
     // -- Bill Endpoints --

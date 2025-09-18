@@ -5,6 +5,7 @@ import { showNotification } from '../js/ui.js';
 // --- Central Application State ---
 // The state is now initialized as null. It will be populated by fetching from the API.
 const appState = {
+    orders: [],
     tables: [],
     menu: [],
     kitchenOrders:[],
@@ -21,13 +22,15 @@ export const initializeAppState = async () => {
     document.body.classList.add('loading'); // A simple loading indicator
 
     try {
-        const [menuRes, tablesRes, kitchenOrdersRes, billsRes] = await Promise.all([
+         const [ordersRes, menuRes, tablesRes, kitchenOrdersRes, billsRes] = await Promise.all([
+            apiService.getOrders(),
             apiService.getMenu(),
             apiService.getTables(),
             apiService.getKitchenOrders(),
             apiService.getBills(),
         ]);
 
+        appState.orders = ordersRes.data || [];
         appState.menu = menuRes.data || [];
         appState.tables = tablesRes.data || [];
         appState.kitchenOrders = kitchenOrdersRes.data || [];
@@ -61,6 +64,8 @@ export const getTables = () => getState('tables');
 export const getMenu = () => getState('menu');
 export const getKitchenOrders = () => getState('kitchenOrders');
 export const getBills = () => getState('bills');
+export const getOrders=() => getState('orders');
+export const getParcels =() => getState('orders')?.filter(order=>order.OrderType==="Parcel");
 
 export const getTableByName = (name) => getTables()?.find(t => t.TableNumber === name);
 export const getMenuItemById = (id) => getMenu()?.find(item => item.id === id);
@@ -85,6 +90,9 @@ export const refreshState = async (key) => {
                 break;
             case 'bills':
                 response = await apiService.getBills();
+                break;
+            case 'orders':
+                response = await apiService.allOrders();
                 break;
             default:
                 console.warn(`Unknown state key to refresh: ${key}`);

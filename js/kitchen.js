@@ -1,86 +1,124 @@
-// js/kitchen.js
-import * as state from './state.js';
+import { getKitchenOrders, refreshState } from './state.js';
+import { apiService, socketService } from './apiService.js';
+import { showNotification } from './ui.js';
+
+
+const markItemAsReady = async (queueId) => {
+    try {
+        // We use 'Completed' as the status to send to the backend service.
+        await apiService.updateKitchenOrderStatus(queueId, 'Completed');
+        showNotification('Success', 'Item marked as ready.', 'success');
+        // The UI will update automatically via the socket event, 
+        // but we can also manually refresh the state for instant feedback.
+        await refreshState('kitchenOrders');
+        renderKitchenOrders();
+    } catch (error) {
+        showNotification('API Error', `Could not update item status: ${error.message}`, 'error');
+    }
+};
 
 const renderKitchenOrders = () => {
+    refreshState('kitchenOrders'); // Ensure we have the latest data
     const kotContainer = document.getElementById('kot-display-area');
     if (!kotContainer) return;
 
-    kotContainer.innerHTML = '';
-    const pendingOrders = state.getKitchenOrders().filter(order => order.status !== 'completed');
-    
-    if (pendingOrders.length === 0) {
-        kotContainer.innerHTML = `<p style="text-align: center; padding: 20px;">No pending kitchen orders.</p>`;
+    const pendingItems = getKitchenOrders();
+
+    if (!pendingItems || pendingItems.length === 0) {
+        kotContainer.innerHTML = `<p class="no-data-msg" style="grid-column: 1 / -1;">No pending kitchen orders.</p>`;
         return;
     }
 
-    pendingOrders.forEach(order => {
-        const ticket = document.createElement('div');
-        ticket.className = 'kot-ticket';
+    // Group items by OrderID to create a base for each ticket.
+    const orders = pendingItems.reduce((acc, item) => {
+        // If we haven't seen this OrderID yet, create a new ticket for it.
+        if (!acc[item.OrderID]) {
+            acc[item.OrderID] = {
+                orderId: item.OrderID,
+                orderNumber: item.OrderNumber,
+                source: item.TableNumber ? `Table ${item.TableNumber}` : `Parcel`,
+                createdAt: new Date(item.CreatedAt).toLocaleTimeString(),
+                items: []
+            };
+        }
+        // Add the current item to its corresponding order's item array.
+        acc[item.OrderID].items.push(item);
         
-        const aggregatedItems = {};
-        order.items.forEach(item => {
-            if (aggregatedItems[item.name]) {
-                aggregatedItems[item.name].qty++;
-            } else {
-                aggregatedItems[item.name] = { ...item, qty: 1 };
+        return acc;
+    }, {});
+
+
+    // Render a ticket for each grouped order.
+    kotContainer.innerHTML = Object.values(orders).map(order => {
+        // Unroll items based on their quantity.
+        const itemsList = order.items.flatMap(item => {
+            // --- BUG FIX ---
+            // This handles the malformed data where ItemName is an array.
+            // We now check if it's an array and, if so, take the first element.
+            let itemName = item.ItemName;
+            if (Array.isArray(itemName)) {
+                itemName = itemName[0];
             }
-        });
+            
+            const individualItems = [];
+            // Create a separate list item for each unit of quantity.
+            for (let i = 0; i < item.Quantity; i++) {
+                individualItems.push(`
+                    <li class="kot-item-row" data-queue-id="${item.QueueID}">
+                        <div class="item-details">
+                            <span>${itemName} <strong>x1</strong></span>
+                            ${/* Only show instructions on the first instance of the item */''}
+                            ${ i === 0 && item.SpecialInstructions ? `<small class="instructions">Note: ${item.SpecialInstructions}</small>` : ''}
+                        </div>
+                        <button class="btn btn-ready" data-queue-id="${item.QueueID}">Ready</button>
+                    </li>`
+                );
+            }
+            return individualItems;
+        }).join('');
 
-        const itemsList = Object.values(aggregatedItems).map(item => 
-            `<li>${item.name} <strong>x${item.qty}</strong></li>`
-        ).join('');
-        
-        ticket.innerHTML = `
-            <div class="kot-header">
-                <span class="table-name">${order.table}</span>
-                <span class="timestamp">${order.timestamp}</span>
-            </div>
-            <ul class="kot-items-list">${itemsList}</ul>
-            <div class="kot-actions">
-                <button class="btn" data-id="${order.id}">Mark as Ready</button>
+        return `
+            <div class="kot-ticket">
+                <div class="kot-header">
+                    <span class="table-name">${order.source}</span>
+                    <span class="order-number">#${order.orderNumber}</span>
+                    <span class="timestamp">${order.createdAt}</span>
+                </div>
+                <ul class="kot-items-list">${itemsList}</ul>
             </div>`;
-        
-        ticket.querySelector('.kot-actions .btn').addEventListener('click', (e) => {
-            markOrderAsReady(parseInt(e.target.dataset.id));
-        });
-        
-        kotContainer.appendChild(ticket);
-    });
+    }).join('');
 };
 
-const markOrderAsReady = (orderId) => {
-    const kitchenOrder = state.getKitchenOrders().find(o => o.id === orderId);
-    if (!kitchenOrder) return;
-
-    let source;
-    if (kitchenOrder.table.startsWith('Table')) {
-        source = state.getTableByName(kitchenOrder.table.replace('Table ', ''));
-    } else {
-        source = state.getParcelByToken(kitchenOrder.table.replace('Parcel ', ''));
-    }
-
-    if (source) {
-        source.orderStatus = 'ready';
-        if (source.name) state.updateTable(source);
-        if (source.token) state.updateParcel(source);
-        alert(`Order for ${kitchenOrder.table} is ready for checkout!`);
-    }
-
-    state.removeKitchenOrder(orderId);
+export const initKitchenPage = async () => {
+    // 1. Initial data fetch and render
+    await refreshState('kitchenOrders');
     renderKitchenOrders();
-};
 
-export const initKitchenPage = () => {
-    // REAL-TIME UPDATE LOGIC
-    const storageListener = () => {
+    // 2. Set up event delegation for "Ready" buttons
+    const kotContainer = document.getElementById('kot-display-area');
+    kotContainer?.addEventListener('click', (e) => {
+        const readyButton = e.target.closest('.btn-ready');
+        if (readyButton) {
+            const queueId = parseInt(readyButton.dataset.queueId);
+            markItemAsReady(queueId);
+        }
+    });
+
+    // 3. Set up real-time listeners for socket events from the server
+    const handleKitchenUpdate = async () => {
+        console.log('Socket event received: kitchenUpdate. Refreshing kitchen view.');
+        await refreshState('kitchenOrders');
         renderKitchenOrders();
     };
-    window.addEventListener('storage', storageListener);
 
-    renderKitchenOrders();
+    socketService.on('kitchenUpdate', handleKitchenUpdate);
+    socketService.on('newOrder', handleKitchenUpdate); // Also refresh when a new order comes in
 
-    // Return a cleanup function for the router to call when we navigate away
+    // 4. Return a cleanup function for the router
     return () => {
-        window.removeEventListener('storage', storageListener);
+        // Remove the listeners when navigating away to prevent memory leaks
+        socketService.off('kitchenUpdate', handleKitchenUpdate);
+        socketService.off('newOrder', handleKitchenUpdate);
     };
 };
+

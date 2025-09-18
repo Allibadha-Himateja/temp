@@ -1,90 +1,130 @@
-// js/tables.js
-import * as state from './state.js';
+import { getTables, refreshState } from './state.js';
 import { initOrderInterface } from './order.js';
+import { socketService } from './apiService.js';
 
-let selectedTableName = null;
+// --- Module State ---
+let selectedTable = null;
+let orderInterfaceCleanup = null; // To clean up order interface listeners
 
-const calculateCardTotal = (table) => {
-    const allItems = [...table.order, ...table.pendingBillItems];
-    return allItems.reduce((sum, item) => sum + item.price, 0);
-};
-
-const renderTablesView = () => {
+// --- View Toggling ---
+const showView = (view) => {
     const selectionView = document.getElementById("table-selection-view");
     const orderView = document.getElementById("order-taking-view");
-    
-    if (selectedTableName) {
-        // console.log("here we are getting the table Order:",selectedTableName,state.getTables(selectedTableName));
-        const table = state.getTableByName(selectedTableName);
-        if (!table) { // If table was deleted from another tab
-            selectedTableName = null;
-            renderTablesView();
-            return;
-        }
+
+    if (view === 'order') {
         selectionView.style.display = "none";
         orderView.style.display = "block";
-        document.getElementById("order-title").textContent = `Order for Table ${table.TableNumber}`;
-        console.log("table in tables.js:",table);
-        initOrderInterface(table, orderView,{ type: 'Table', source: table });
-
     } else {
+        // Clean up any existing order interface before hiding it
+        if (orderInterfaceCleanup) orderInterfaceCleanup();
         selectionView.style.display = "block";
         orderView.style.display = "none";
-        
-        const tablesContainer = document.getElementById("tables-container");
-        tablesContainer.innerHTML = '';
-        state.getTables().forEach(table => {
-            // console.log(table);
-            const card = document.createElement("div");
-            let statusClass = table.status === 'booked' ? 'status-booked' : 'status-available';
-            if (table.orderStatus === 'billed') statusClass = 'status-billed';
-            card.className = `item-card table-card ${statusClass}`;
-            
-            let statusText = 'Available';
-            let detailsHtml = '<p class="availability">Ready for guests</p>';
-
-            if (table.status === 'booked') {
-                statusText = 'Occupied';
-                const total = calculateCardTotal(table);
-                const itemCount = table.order.length + table.pendingBillItems.length;
-                detailsHtml = `<div class="table-details"><span><i class="fas fa-list-ol"></i> ${itemCount} Items</span><span><i class="fas fa-rupee-sign"></i> ${total.toFixed(2)}</span></div>`;
-            } else if (table.orderStatus === 'billed') {
-                statusText = 'Billed';
-                const total = calculateCardTotal(table);
-                detailsHtml = `<div class="table-details"><span><i class="fas fa-check"></i> Ready to Pay</span><span><i class="fas fa-rupee-sign"></i> ${total.toFixed(2)}</span></div>`;
-            }
-
-            card.innerHTML = `
-                <div class="table-card-header"><h4>${table.TableNumber}</h4><span class="status-badge">${statusText}</span></div>
-                <div class="table-card-body"><i class="fas fa-chair table-icon"></i>${detailsHtml}</div>`;
-            
-            card.addEventListener("click", () => {
-                selectedTableName = table.TableNumber;
-                renderTablesView();
-            });
-            tablesContainer.appendChild(card);
-        });
     }
 };
 
-export const initTablesPage = () => {
-    selectedTableName = null;
-    
-    // REAL-TIME UPDATE LOGIC
-    const storageListener = () => {
-        renderTablesView();
-    };
-    window.addEventListener('storage', storageListener);
+// --- Rendering ---
+const renderTablesView = () => {
+    const tablesContainer = document.getElementById("tables-container");
+    if (!tablesContainer) return;
 
+    const tables = getTables();
+    if (!tables) {
+        tablesContainer.innerHTML = '<p class="loading-msg">Loading tables...</p>';
+        return;
+    }
+
+    if (tables.length === 0) {
+        tablesContainer.innerHTML = '<p class="no-data-msg">No tables found. Add them in the "Update" page.</p>';
+        return;
+    }
+
+    tablesContainer.innerHTML = tables.map(table => {
+        // Correctly use the 'Status' property from the backend
+        const status = table.Status || 'Available';
+        const statusClass = `status-${status.toLowerCase()}`;
+        
+        let statusText = status;
+        let detailsHtml = '<p class="availability">Ready for guests</p>';
+
+        // Check if the table has an active order linked to it
+        if (status === 'Occupied' && table.CurrentOrderID) {
+            statusText = 'Occupied';
+            const total = table.TotalAmount || 0;
+            const orderNum = table.OrderNumber || 'N/A';
+            detailsHtml = `
+                <div class="table-details">
+                    <span><i class="fas fa-receipt"></i> #${orderNum}</span>
+                    <span><i class="fas fa-rupee-sign"></i> ${total.toFixed(2)}</span>
+                </div>`;
+        }
+        
+        return `
+            <div class="item-card table-card ${statusClass}" data-table-number="${table.TableNumber}">
+                <div class="table-card-header">
+                    <h4>${table.TableNumber}</h4>
+                    <span class="status-badge">${statusText}</span>
+                </div>
+                <div class="table-card-body">
+                    <i class="fas fa-chair table-icon"></i>
+                    ${detailsHtml}
+                </div>
+            </div>
+        `;
+    }).join('');
+};
+
+// --- Initialization ---
+export const initTablesPage = async () => {
+    selectedTable = null;
+    
+    // 1. Initial Render
+    await refreshState('tables'); // Get the latest data when the page loads
+    renderTablesView();
+    showView('list');
+
+    // 2. Event Delegation for Table Clicks
+    const tablesContainer = document.getElementById("tables-container");
+    tablesContainer?.addEventListener("click", (e) => {
+        const card = e.target.closest('.table-card');
+        if (card) {
+            const tableNumber = card.dataset.tableNumber;
+            selectedTable = getTables().find(t => t.TableNumber == tableNumber);
+            
+            // --- LOGIC CORRECTION ---
+            // This now allows entry for ANY table, not just available ones.
+            // The logic to handle an existing order will be built into order.js next.
+            if (selectedTable) {
+                const orderView = document.getElementById("order-taking-view");
+                orderInterfaceCleanup = initOrderInterface({ type: 'Table', source: selectedTable }, orderView);
+                showView('order');
+            }
+        }
+    });
+
+    // 3. Back Button Listener
     document.getElementById("back-to-tables-btn")?.addEventListener("click", () => {
-        selectedTableName = null;
-        renderTablesView();
+        selectedTable = null;
+        showView('list');
+        // Refresh the table list in case an order was just created or updated
+        refreshState('tables').then(renderTablesView);
     });
     
-    renderTablesView();
+    // 4. Real-time updates with Socket.IO
+    const handleTableUpdate = async () => {
+        console.log('Socket event received: tableStatusUpdate or newOrder. Refreshing tables.');
+        await refreshState('tables');
+        renderTablesView();
+    };
 
-    // Return a cleanup function
+    socketService.on('tableStatusUpdate', handleTableUpdate);
+    socketService.on('newOrder', handleTableUpdate);
+
+    // 5. Return a cleanup function for the router
     return () => {
-        window.removeEventListener('storage', storageListener);
+        // Remove socket listeners when navigating away to prevent memory leaks
+        socketService.off('tableStatusUpdate', handleTableUpdate);
+        socketService.off('newOrder', handleTableUpdate);
+        if (orderInterfaceCleanup) orderInterfaceCleanup();
     };
 };
+
